@@ -1,29 +1,20 @@
 # Focus Buddy Chat Application
 
-An informative, friendly, and encouraging study guide chat application template powered by Cloudflare Workers AI. This app is designed to help students ask questions, save chats for every new topic, and receive encouragement while studying.
+A simple, responsive study guide chat application template powered by Cloudflare Workers AI. This app is designed to help students ask questions, save chats for every new topic, and receive encouragement while studying.
 
 [![Deploy to Cloudflare](https://deploy.workers.cloudflare.com/button)](https://deploy.workers.cloudflare.com/?url=https://github.com/cloudflare/templates/tree/main/llm-chat-app-template)
 
 <!-- dash-content-start -->
 
-## Demo
-
-This template demonstrates how to build an AI-powered chat interface using Cloudflare Workers AI with streaming responses. It features:
-
-- Real-time streaming of AI responses using Server-Sent Events (SSE)
-- Easy customization of models and system prompts
-- Support for AI Gateway integration
-- Clean, responsive UI that works on mobile and desktop
-
 ## Features
 
-- 💬 Simple and responsive chat interface
-- ⚡ Server-Sent Events (SSE) for streaming responses
-- 🧠 Powered by Cloudflare Workers AI LLMs
+- 💬 AI study assistant that provides informative, concise, and encouraging responses
+- 🔄 Persistent chat history that is stored in Cloudflare Durable Objects, allowing users to resume conversations across old and current chats
+- 🧠 A New Chat button that allows users to start a new conversation for each study topic
+- 📱 Responsive UI that displays a sidebar for chat history and a main chat window, optimized for desktop and mobile
+- 🔎 Lightweight frontend built with vanilla HTML, CSS, and TypeScript
 - 🛠️ Built with TypeScript and Cloudflare Workers
-- 📱 Mobile-friendly design
-- 🔄 Maintains chat history on the client
-- 🔎 Built-in Observability logging
+
 <!-- dash-content-end -->
 
 ## Getting Started
@@ -39,8 +30,8 @@ This template demonstrates how to build an AI-powered chat interface using Cloud
 1. Clone this repository:
 
    ```bash
-   git clone https://github.com/cloudflare/templates.git
-   cd templates/llm-chat-app
+   git clone https://github.com/yourusername/focus-buddy.git
+   cd focus-buddy
    ```
 
 2. Install dependencies:
@@ -100,6 +91,12 @@ npm wrangler tail
 
 ## How It Works
 
+### Tech Stack
+- Frontend: HTML, CSS, TypeScript
+- Backend: Cloudflare Workers, Durable Objects, KV storage
+- AI Model: @cf/meta/llama-3.3-70b-instruct-fp8-fast via Cloudflare Workers AI
+- Communication: REST API endpoints for chat management and messages
+
 ### Backend
 
 The backend is built with Cloudflare Workers and uses the Workers AI platform to generate responses. The main components are:
@@ -138,16 +135,13 @@ To enable AI Gateway:
 
 Learn more about [AI Gateway](https://developers.cloudflare.com/ai-gateway/).
 
-### Modifying the System Prompt
+### System Prompt
 
-The default system prompt can be changed by updating the `SYSTEM_PROMPT` constant in `src/index.ts`.
+The current system prompt is "You are an informative, friendly, encouraging study buddy. Provide concise and accurate responses in a quick manner." This can be changed by updating the `SYSTEM_PROMPT` constant in `src/index.ts`.
 
 ### Styling
 
-The UI styling is contained in the `<style>` section of `public/index.html`. You can modify the CSS variables at the top to quickly change the color scheme.
-
-## Resources
-
-- [Cloudflare Workers Documentation](https://developers.cloudflare.com/workers/)
-- [Cloudflare Workers AI Documentation](https://developers.cloudflare.com/workers-ai/)
-- [Workers AI Models](https://developers.cloudflare.com/workers-ai/models/)
+- Light color palette with clear distinction between user and AI messages.
+- Sidebar for session history and main chat window adapts to desktop and mobile.
+- Active chat highlighted, hover effects on chat list, typing indicator for AI responses.
+- Custom font (Lora) and soft color palette to reduce eye strain during study sessions.
