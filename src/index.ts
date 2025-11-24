@@ -53,7 +53,6 @@ export default {
 			return new Response("Method not allowed", { status: 405 });
 		}
 
-
 		// POST /api/newSession (Generating a new chat with a new session)
 		if (url.pathname === "/api/newSession" && request.method === "POST") {
   			// Safely parse optional JSON body to read { topic }
