@@ -145,3 +145,12 @@ The current system prompt is "You are an informative, friendly, encouraging stud
 - Sidebar for session history and main chat window adapts to desktop and mobile.
 - Active chat highlighted, hover effects on chat list, typing indicator for AI responses.
 - Custom font (Lora) and soft color palette to reduce eye strain during study sessions.
+
+## Future Improvements
+- Real-time streaming responses via Server-Sent Events (SSE)
+- Rich text formatting and math support
+- Multi-device login with session sync
+- User authentication and personalized AI prompts
+
+## License
+MIT License © 2025
