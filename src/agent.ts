@@ -27,6 +27,7 @@ export class MyAgent {
     await this.state.storage.put("sessions", this.sessions);
   }
 
+
   /** Find the active session by ID, or create a new one */
   private async getSession(sessionId?: string, topic?: string): Promise<ChatSession> {
     await this.loadSessions();
@@ -91,20 +92,31 @@ export class MyAgent {
 
     // GET /getSessions -> list of all sessions (for left-side chat list)
     if (pathname === "/getSessions" && request.method === "GET") {
-      await this.loadSessions();
+  await this.loadSessions();
 
-      // Return only IDs, topics, lastUpdated
-      const list = this.sessions.map(({ id, topic, lastUpdated }) => ({
-        id,
-        topic,
-        lastUpdated,
-      }));
+  const list = this.sessions.map(({ id, messages, lastUpdated, topic }) => {
+    let summary = topic;
 
-      return new Response(
-        JSON.stringify(list),
-        { headers: { "content-type": "application/json" } }
-      );
+    if (messages && messages.length) {
+      // Find the last non‑system message
+      const lastMsg = [...messages]
+        .reverse()
+        .find((m) => m.role !== "system");
+
+      if (lastMsg) {
+        // strip line breaks and keep short
+        summary = lastMsg.content.replace(/\s+/g, " ").slice(0, 40);
+        if (lastMsg.content.length > 40) summary += "…";
+      }
     }
+
+    return { id, topic, summary, lastUpdated };
+  });
+
+  return new Response(JSON.stringify(list), {
+    headers: { "content-type": "application/json" },
+  });
+}
 
     // Default route
     return new Response("Not found", { status: 404 });

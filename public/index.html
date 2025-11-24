@@ -29,7 +29,7 @@
 					"Lora", sans-serif;
 				line-height: 1.5;
 				color: var(--text-color);
-				max-width: 1200px;
+				max-width: 1400px;
 				margin: 0 auto;
 				padding: 0.5rem;
 			}
@@ -42,9 +42,23 @@
 			}
 
 			h1 {
-				font-size: 1.8rem;
-				color: var(--primary-color);
+				font-size: 1.6rem;
+  				font-weight: 700;
+  				color: var(--primary-color);
+  				display: inline-flex;
+  				align-items: baseline;
+  				gap: 8px;
+  				margin: 0;
 			}
+
+			/* Make the subtitle smaller and italic next to title */
+			header .subtitle {
+  			font-size: 0.9rem;     /* smaller than main title */
+  			font-style: italic;
+  			color: var(--text-light);
+  			font-weight: 400;
+			}
+			
 			.main-container {
 				display: flex;
 				flex-direction: row; 
@@ -55,7 +69,9 @@
 
 			/* Left sidebar */
 			.chat-history {
-				width: 200px;                 /* <<< ADD THIS */
+				flex: 0 0 25%;       /* exactly 25 % of available width */
+  				max-width: 400px;    /* optional upper limit on big screens */
+  				min-width: 200px;                 /* <<< ADD THIS */
 				border: 1px solid var(--border-color);
 				border-radius: 8px;
 				padding: 10px;
@@ -65,11 +81,13 @@
 
 			/* Right side chat window */
 			.chat-container {
+				flex: 0 0 74%;   
 				flex: 1;                      /* <<< TAKE REMAINING SPACE */
 				display: flex;
 				flex-direction: column;
 				border: 1px solid var(--border-color);
   				border-radius: 8px;
+				box-shadow: 0 0 8px rgba(0,0,0,0.1);
   				overflow: hidden;
 			}
 
@@ -173,15 +191,110 @@
 			}
 
 			header .logo {
-    		width: 60px;   /* adjust to desired size */
-    		height: 60px;  /* maintain square or proportional to image */
+    		width: 45px;   /* adjust to desired size */
+    		height: 45px;  /* maintain square or proportional to image */
     		object-fit: contain; 
 			}
 			
+			/* Remove default list bullets and spacing */
+			#history-list {
+  			list-style: none;   /* removes the bullet */
+  			margin: 0;
+  			padding: 0;
+			}
+
+			/* Make each chat look like a clean clickable row */
+			#history-list li {
+  			display: block;
+  			padding: 8px 10px;
+  			border-radius: 6px;
+  			cursor: pointer;
+  			transition: background 0.2s;
+			}
+
+			/* Hover and active styling */
+			#history-list li:hover {
+  			background-color: #f2f6fd;
+			}
+
 			#history-list li.active {
   			background-color: #eef3ff;
   			font-weight: 600;
   			border-left: 4px solid #3b82f6;
+			}
+
+			/* Layout row for summary + timestamp */
+			#history-list .chat-item-top {
+  			display: flex;
+  			align-items: center;
+  			justify-content: space-between;
+  			gap: 6px;
+			}
+
+			/* Summary text */
+			#history-list .chat-summary {
+  			font-size: 0.9rem;
+  			color: var(--text-color);
+  			flex: 1;
+  			overflow: hidden;
+  			text-overflow: ellipsis;
+  			white-space: nowrap;
+			}
+
+			/* Timestamp style — very small and muted */
+			#history-list .chat-timestamp {
+  			font-size: 0.7rem;
+  			color: var(--text-light);
+  			white-space: nowrap;
+			}
+
+			.chat-header {
+  			display: flex;
+  			align-items: center;
+  			justify-content: space-between;
+  			margin-bottom: 0.5rem;
+  			padding: 0 4px;
+			}
+
+			.chat-header h3 {
+  			font-size: 1.1rem;
+  			color: var(--primary-color);
+  			margin: 0;
+			}
+
+			.chat-header-button {
+  			background-color: var(--primary-color);
+  			color: white;
+  			border: none;
+  			border-radius: 50%;
+  			width: 28px;
+  			height: 28px;
+			font-size: 1.2rem;
+  			line-height: 28px;
+  			text-align: center;
+  			cursor: pointer;
+  			transition: background-color 0.2s, transform 0.2s;
+			}
+
+			.chat-header-button:hover {
+  			background-color: var(--primary-hover);
+  			transform: scale(1.05);
+			}
+			
+			@media (max-width: 768px) {
+  			.main-container {
+   			flex-direction: column;
+  			}
+  			.chat-history, .chat-container {
+   			flex: 0 0 auto;
+    		width: 100%;
+  			}
+  			.chat-history {
+    		max-height: 40vh; /* sidebar takes top 40 % on mobile */
+  			}
+  			.chat-container {
+    		flex: 1;
+  			}
 			}
 
 		</style>
@@ -189,10 +302,12 @@
 				<body>
 			<header>
   				<div class="header-content">
-    				<img src="/images/logo2.png" alt="" class="logo" />
+   					<img src="/images/logo2.png" alt="" class="logo" />
     				<div class="title-group">
-     					<h1>Focus Buddy</h1>
-      					<p>Powered by Cloudflare Workers AI</p>
+      					<h1>
+        					Focus Buddy
+        					<span class="subtitle">Powered by Cloudflare Workers AI</span>
+      					</h1>
     				</div>
   				</div>
 			</header>
@@ -201,10 +316,12 @@
 
 		<div class="main-container">
 			<div class="chat-history">
-				<button id="new-chat">New Chat</button>
-    			<h3>Chats</h3>
-    			<ul id="history-list"></ul>
-  			</div>
+  				<div class="chat-header">
+    				<h3>Chats</h3>
+   					<button id="new-chat" class="chat-header-button">+</button>
+  				</div>
+			  	<ul id="history-list"></ul>
+			</div>
 
   		<div class="chat-container">
     		<div id="chat-messages" class="chat-messages">

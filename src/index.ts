@@ -17,7 +17,7 @@ const MODEL_ID = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 // Default system prompt
 const SYSTEM_PROMPT =
-	"You are an informative, friendly, encouraging study buddy. Provide concise and accurate responses.";
+	"You are an informative, friendly, encouraging study buddy. Provide concise and accurate responses in a quick manner.";
 
 export default {
 	/**
@@ -31,7 +31,7 @@ export default {
 		const url = new URL(request.url);
 		// inside fetch(...) near the top, create a stub for your DO once per request
 		// create DO stub (do this once per request, near the top of fetch)
-		const doId = env.MyAgent.idFromName("chat-v4"); // "chat" is a stable name; keep consistent
+		const doId = env.MyAgent.idFromName("chat-v5"); // "chat" is a stable name; keep consistent
 		const doStub = env.MyAgent.get(doId);
 
 	

@@ -12,23 +12,31 @@ let isProcessing = false;
 // Load all sessions into sidebar
 async function loadSessions() {
   const res = await fetch("/api/sessions");
-  const sessions = await res.json();
+  const sessions = (await res.json()).sort((a, b) => b.lastUpdated - a.lastUpdated);
   historyList.innerHTML = "";
 
   sessions.forEach((s) => {
     const li = document.createElement("li");
-    li.textContent = s.topic;
-    li.dataset.id = s.id;
+    // show the summary instead of topic
+    const updated = new Date(s.lastUpdated);
+	const timeStr = updated.toLocaleString([], {
+		month: "short",    // e.g., "Nov"
+  		day: "numeric",
+  		hour: "2-digit",
+  		minute: "2-digit",
+		});
 
-    li.addEventListener("click", async () => {
-      // unhighlight any previous chat
-      Array.from(historyList.children).forEach((el) =>
-        el.classList.remove("active")
-      );
-      // highlight this one
+	li.innerHTML = `
+  		<div class="chat-item-top">
+    		<span class="chat-summary">${s.summary || s.topic || "New chat"}</span>
+   		 <span class="chat-timestamp">${timeStr}</span>
+  		</div>
+`	;
+    li.dataset.id = s.id;
+    li.addEventListener("click", () => {
+      Array.from(historyList.children).forEach(el => el.classList.remove("active"));
       li.classList.add("active");
-      // load its messages
-      await loadSession(s.id);
+      loadSession(s.id);
     });
 
     historyList.appendChild(li);
