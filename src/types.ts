@@ -12,6 +12,9 @@ export interface Env {
 	 * Binding for static assets.
 	 */
 	ASSETS: { fetch: (request: Request) => Promise<Response> };
+	MY_KV: KVNamespace;
+
+	MyAgent: DurableObjectNamespace;
 }
 
 /**

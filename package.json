@@ -18,7 +18,7 @@
 		"publish": true
 	},
 	"devDependencies": {
-		"@cloudflare/vitest-pool-workers": "0.8.44",
+		"@cloudflare/vitest-pool-workers": "^0.8.71",
 		"@types/node": "^24.0.4",
 		"typescript": "5.8.3",
 		"vitest": "3.2.4",
@@ -31,5 +31,8 @@
 		"dev": "wrangler dev",
 		"start": "wrangler dev",
 		"test": "vitest"
+	},
+	"dependencies": {
+		"agents": "^0.2.23"
 	}
 }

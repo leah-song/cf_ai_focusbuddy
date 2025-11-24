@@ -8,6 +8,8 @@
  * @license MIT
  */
 import { Env, ChatMessage } from "./types";
+import { MyAgent } from "./agent";
+
 
 // Model ID for Workers AI model
 // https://developers.cloudflare.com/workers-ai/models/
@@ -15,7 +17,7 @@ const MODEL_ID = "@cf/meta/llama-3.3-70b-instruct-fp8-fast";
 
 // Default system prompt
 const SYSTEM_PROMPT =
-	"You are an informative, encouraging, and reliable study buddy. Provide concise and accurate responses to help the user study.";
+	"You are an informative, friendly, encouraging study buddy. Provide concise and accurate responses.";
 
 export default {
 	/**
@@ -27,13 +29,17 @@ export default {
 		ctx: ExecutionContext,
 	): Promise<Response> {
 		const url = new URL(request.url);
+		// inside fetch(...) near the top, create a stub for your DO once per request
+		// create DO stub (do this once per request, near the top of fetch)
+		const doId = env.MyAgent.idFromName("chat-v4"); // "chat" is a stable name; keep consistent
+		const doStub = env.MyAgent.get(doId);
 
+	
 		// Handle static assets (frontend)
 		if (url.pathname === "/" || !url.pathname.startsWith("/api/")) {
 			return env.ASSETS.fetch(request);
 		}
 
-		// API Routes
 		if (url.pathname === "/api/chat") {
 			// Handle POST requests for chat
 			if (request.method === "POST") {
@@ -44,10 +50,92 @@ export default {
 			return new Response("Method not allowed", { status: 405 });
 		}
 
+
+		// POST /api/newSession (Generating a new chat with a new session)
+		if (url.pathname === "/api/newSession" && request.method === "POST") {
+  			// Safely parse optional JSON body to read { topic }
+			 let body: any = {};
+			  try {
+   				 body = await request.json();
+  				} catch (_) {
+  				  body = {};
+  				}
+			const topic = body.topic || `Chat - ${new Date().toLocaleString()}`;
+
+  		// Forward to the Durable Object's addMessage endpoint with topic query.
+  		// The agent.ts will create a new session when it sees no sessionId and a topic.
+  			const res = await doStub.fetch(
+    		`https://do/addMessage?topic=${encodeURIComponent(topic)}`,
+    		{
+     		 method: "POST",
+      		headers: { "content-type": "application/json" },
+      		// send a small placeholder ChatMessage object (agent will append it into the new session)
+      		body: JSON.stringify({ role: "assistant",
+      content:
+        "Hi friend! I'm your helpful study buddy powered by Cloudflare Workers AI. How can I help you today?"}),
+    		}
+  			);
+
+		  // Forward the DO response (should include { ok: true, sessionId })
+  			return res;
+		}
+
+		// GET /api/sessions -> list of all sessions
+if (url.pathname === "/api/sessions" && request.method === "GET") {
+  const res = await doStub.fetch("https://do/getSessions");
+  return res; // DO returns JSON list already
+}
+
+// GET /api/session?id=... -> load chat history for a session
+if (url.pathname === "/api/session" && request.method === "GET") {
+  const id = url.searchParams.get("id");
+  if (!id) {
+    return new Response("Missing id", { status: 400 });
+  }
+  const res = await doStub.fetch(`https://do/getHistory?sessionId=${id}`);
+  return res; 
+}
+
+// POST /api/addMessage -> persist a message through the Durable Object
+if (url.pathname === "/api/addMessage" && request.method === "POST") {
+  try {
+    // Parse the JSON body safely
+    const body = (await request.json()) as any;
+
+    // Extract possible fields
+    const sessionId: string | undefined = body.sessionId;
+    const message: ChatMessage | undefined = body.message;
+    const topic: string | undefined = body.topic;
+
+    // Validate
+    if (!message) {
+      return new Response("Missing message", { status: 400 });
+    }
+
+    // Build query
+    const query = new URLSearchParams();
+    if (sessionId) query.set("sessionId", sessionId);
+    if (topic) query.set("topic", topic);
+
+    // Forward to the Durable Object
+    const doRes = await doStub.fetch(`https://do/addMessage?${query}`, {
+      method: "POST",
+      headers: { "content-type": "application/json" },
+      body: JSON.stringify(message),
+    });
+
+    return doRes;
+  } catch (err) {
+    console.error("Error handling /api/addMessage:", err);
+    return new Response("Bad Request", { status: 400 });
+  }
+}
 		// Handle 404 for unmatched routes
 		return new Response("Not found", { status: 404 });
 	},
 } satisfies ExportedHandler<Env>;
+export {MyAgent}; 
+
 
 /**
  * Handles chat API requests
@@ -97,3 +185,4 @@ async function handleChatRequest(
 		);
 	}
 }
+

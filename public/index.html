@@ -29,7 +29,7 @@
 					"Lora", sans-serif;
 				line-height: 1.5;
 				color: var(--text-color);
-				max-width: 800px;
+				max-width: 1200px;
 				margin: 0 auto;
 				padding: 0.5rem;
 			}
@@ -45,15 +45,44 @@
 				font-size: 1.8rem;
 				color: var(--primary-color);
 			}
-
-			.chat-container {
+			.main-container {
 				display: flex;
-				flex-direction: column;
+				flex-direction: row; 
+				gap: 20px;
 				height: calc(100vh - 150px);
 				min-height: 400px;
+			}
+
+			/* Left sidebar */
+			.chat-history {
+				width: 200px;                 /* <<< ADD THIS */
 				border: 1px solid var(--border-color);
 				border-radius: 8px;
-				overflow: hidden;
+				padding: 10px;
+				overflow-y: auto;
+				background: lightgrey;
+			}
+
+			/* Right side chat window */
+			.chat-container {
+				flex: 1;                      /* <<< TAKE REMAINING SPACE */
+				display: flex;
+				flex-direction: column;
+				border: 1px solid var(--border-color);
+  				border-radius: 8px;
+  				overflow: hidden;
+			}
+
+
+			.chat-history h3 {
+  				margin-bottom: 0.5rem;
+  				font-size: 1.1rem;
+  				color: var(--primary-color);
+			}
+
+			#history-list li {
+  				margin-bottom: 0.5rem;
+  				font-size: 0.9rem;
 			}
 
 			.chat-messages {
@@ -135,38 +164,73 @@
 				font-size: 0.85rem;
 				color: var(--text-light);
 			}
+
+			header .header-content {
+    		display: flex;
+    		align-items: center; /* vertically center logo and text */
+    		justify-content: center;
+    		gap: 10px; /* space between logo and title/description */
+			}
+
+			header .logo {
+    		width: 60px;   /* adjust to desired size */
+    		height: 60px;  /* maintain square or proportional to image */
+    		object-fit: contain; 
+			}
+			
+			#history-list li.active {
+  			background-color: #eef3ff;
+  			font-weight: 600;
+  			border-left: 4px solid #3b82f6;
+			}
+
 		</style>
-	</head>
-	<body>
-		<header>
-			<h1>Focus Buddy</h1>
-			<p>Powered by Cloudflare Workers AI</p>
-		</header>
+			</head>
+				<body>
+			<header>
+  				<div class="header-content">
+    				<img src="/images/logo2.png" alt="" class="logo" />
+    				<div class="title-group">
+     					<h1>Focus Buddy</h1>
+      					<p>Powered by Cloudflare Workers AI</p>
+    				</div>
+  				</div>
+			</header>
 
-		<div class="chat-container">
-			<div id="chat-messages" class="chat-messages">
-				<div class="message assistant-message">
-					<p>
-						Hi friend! I'm your helpful study buddy powered by Cloudflare Workers AI. How can
-						I help you today?
-					</p>
-				</div>
-			</div>
+		
 
-			<div class="typing-indicator" id="typing-indicator">
-				AI is thinking...
-			</div>
+		<div class="main-container">
+			<div class="chat-history">
+				<button id="new-chat">New Chat</button>
+    			<h3>Chats</h3>
+    			<ul id="history-list"></ul>
+  			</div>
 
-			<div class="message-input">
-				<textarea
-					id="user-input"
-					placeholder="Type your message here..."
-					rows="1"
-					autofocus
-				></textarea>
-				<button id="send-button">Send</button>
-			</div>
+  		<div class="chat-container">
+    		<div id="chat-messages" class="chat-messages">
+    			<div class="message assistant-message">
+        			<p>
+          				Hi friend! I'm your helpful study buddy powered by Cloudflare Workers AI. How can I help you today?
+        			</p>
+      			</div>
+    		</div>
+
+   			<div class="typing-indicator" id="typing-indicator">
+      			AI is thinking...
+    		</div>
+
+    	<div class="message-input">
+     		<textarea
+       			id="user-input"
+       			placeholder="Type your message here..."
+        		rows="1"
+        		autofocus
+    		></textarea>
+      		<button id="send-button">Send</button>
+    			</div>
+  			</div>
 		</div>
+
 
 		<footer>
 			<p>Created with Cloudflare Workers AI Chat Template &copy; 2025</p>

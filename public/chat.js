@@ -1,158 +1,164 @@
-/**
- * LLM Chat App Frontend
- *
- * Handles the chat UI interactions and communication with the backend API.
- */
-
-// DOM elements
 const chatMessages = document.getElementById("chat-messages");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
 const typingIndicator = document.getElementById("typing-indicator");
+const historyList = document.getElementById("history-list");
+const newChatBtn = document.getElementById("new-chat");
 
-// Chat state
-let chatHistory = [
-	{
-		role: "assistant",
-		content:
-			"Hello! I'm an LLM chat app powered by Cloudflare Workers AI. How can I help you today?",
-	},
-];
+let sessionId = null;
+let chatHistory = [];
 let isProcessing = false;
 
-// Auto-resize textarea as user types
-userInput.addEventListener("input", function () {
-	this.style.height = "auto";
-	this.style.height = this.scrollHeight + "px";
-});
+// Load all sessions into sidebar
+async function loadSessions() {
+  const res = await fetch("/api/sessions");
+  const sessions = await res.json();
+  historyList.innerHTML = "";
 
-// Send message on Enter (without Shift)
-userInput.addEventListener("keydown", function (e) {
-	if (e.key === "Enter" && !e.shiftKey) {
-		e.preventDefault();
-		sendMessage();
-	}
-});
+  sessions.forEach((s) => {
+    const li = document.createElement("li");
+    li.textContent = s.topic;
+    li.dataset.id = s.id;
 
-// Send button click handler
-sendButton.addEventListener("click", sendMessage);
+    li.addEventListener("click", async () => {
+      // unhighlight any previous chat
+      Array.from(historyList.children).forEach((el) =>
+        el.classList.remove("active")
+      );
+      // highlight this one
+      li.classList.add("active");
+      // load its messages
+      await loadSession(s.id);
+    });
 
-/**
- * Sends a message to the chat API and processes the response
- */
+    historyList.appendChild(li);
+  });
+}
+
+// Load messages for a session
+async function loadSession(id) {
+  sessionId = id;
+  const res = await fetch(`/api/session?id=${id}`);
+  chatHistory = await res.json();
+  chatMessages.innerHTML = "";
+  chatHistory.forEach(m => addMessageToChat(m.role, m.content));
+}
+
+// Start new chat
+async function startNewChat() {
+  const res = await fetch("/api/newSession", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ topic: `Chat - ${new Date().toLocaleString()}` }),
+  });
+  const data = await res.json();
+  sessionId = data.sessionId;
+  chatHistory = [];
+  chatMessages.innerHTML = "";
+
+  // Refresh the sidebar and highlight the new chat
+    // Refresh the sidebar list
+  await loadSessions();
+
+  // Find the newly created chat in the sidebar
+  const newItem = Array.from(historyList.children).find(
+    (li) => li.dataset.id === sessionId
+  );
+
+  if (newItem) {
+    // Remove "active" from all other list items
+    Array.from(historyList.children).forEach((el) =>
+      el.classList.remove("active")
+    );
+
+    // Highlight this new one
+    newItem.classList.add("active");
+
+    // Load the new chat’s content (the greeting message)
+    await loadSession(sessionId);
+  }
+}
+
+// Send message
 async function sendMessage() {
-	const message = userInput.value.trim();
+  const message = userInput.value.trim();
+  if (!message || isProcessing) return;
 
-	// Don't send empty messages
-	if (message === "" || isProcessing) return;
+  isProcessing = true;
+  userInput.disabled = true;
+  sendButton.disabled = true;
 
-	// Disable input while processing
-	isProcessing = true;
-	userInput.disabled = true;
-	sendButton.disabled = true;
+  addMessageToChat("user", message);
+  saveMessage({ role: "user", content: message });
+  chatHistory.push({ role: "user", content: message });
+  userInput.value = "";
+  userInput.style.height = "auto";
+  typingIndicator.classList.add("visible");
 
-	// Add user message to chat
-	addMessageToChat("user", message);
-
-	// Clear input
-	userInput.value = "";
-	userInput.style.height = "auto";
-
-	// Show typing indicator
-	typingIndicator.classList.add("visible");
-
-	// Add message to history
-	chatHistory.push({ role: "user", content: message });
-
-	try {
-		// Create new assistant response element
-		const assistantMessageEl = document.createElement("div");
-		assistantMessageEl.className = "message assistant-message";
-		assistantMessageEl.innerHTML = "<p></p>";
-		chatMessages.appendChild(assistantMessageEl);
-
-		// Scroll to bottom
-		chatMessages.scrollTop = chatMessages.scrollHeight;
-
-		// Send request to API
-		const response = await fetch("/api/chat", {
-			method: "POST",
-			headers: {
-				"Content-Type": "application/json",
-			},
-			body: JSON.stringify({
-				messages: chatHistory,
-			}),
-		});
-
-		// Handle errors
-		if (!response.ok) {
-			throw new Error("Failed to get response");
-		}
-
-		// Process streaming response
-		const reader = response.body.getReader();
-		const decoder = new TextDecoder();
-		let responseText = "";
-
-		while (true) {
-			const { done, value } = await reader.read();
-
-			if (done) {
-				break;
-			}
-
-			// Decode chunk
-			const chunk = decoder.decode(value, { stream: true });
-
-			// Process SSE format
-			const lines = chunk.split("\n");
-			for (const line of lines) {
-				try {
-					const jsonData = JSON.parse(line);
-					if (jsonData.response) {
-						// Append new content to existing text
-						responseText += jsonData.response;
-						assistantMessageEl.querySelector("p").textContent = responseText;
-
-						// Scroll to bottom
-						chatMessages.scrollTop = chatMessages.scrollHeight;
-					}
-				} catch (e) {
-					console.error("Error parsing JSON:", e);
-				}
-			}
-		}
-
-		// Add completed response to chat history
-		chatHistory.push({ role: "assistant", content: responseText });
-	} catch (error) {
-		console.error("Error:", error);
-		addMessageToChat(
-			"assistant",
-			"Sorry, there was an error processing your request.",
-		);
-	} finally {
-		// Hide typing indicator
-		typingIndicator.classList.remove("visible");
-
-		// Re-enable input
-		isProcessing = false;
-		userInput.disabled = false;
-		sendButton.disabled = false;
-		userInput.focus();
-	}
+  try {
+    const res = await fetch("/api/chat", {
+      method: "POST",
+      headers: { "Content-Type": "application/json" },
+      body: JSON.stringify({ sessionId, messages: chatHistory })
+    });
+    const data = await res.json();
+    addMessageToChat("assistant", data.response);
+    chatHistory.push({ role: "assistant", content: data.response });
+    saveMessage({ role: "assistant", content: data.response });
+    await loadSessions();
+  } catch (err) {
+    console.error(err);
+    if (!data || !data.response) {
+        addMessageToChat("assistant", "Error processing your request.");
+    }
+  } finally {
+    typingIndicator.classList.remove("visible");
+    isProcessing = false;
+    userInput.disabled = false;
+    sendButton.disabled = false;
+    userInput.focus();
+  }
 }
 
-/**
- * Helper function to add message to chat
- */
+// Add message to chat window
 function addMessageToChat(role, content) {
-	const messageEl = document.createElement("div");
-	messageEl.className = `message ${role}-message`;
-	messageEl.innerHTML = `<p>${content}</p>`;
-	chatMessages.appendChild(messageEl);
-
-	// Scroll to bottom
-	chatMessages.scrollTop = chatMessages.scrollHeight;
+  const msgEl = document.createElement("div");
+  msgEl.className = `message ${role}-message`;
+  msgEl.innerHTML = `<p>${content}</p>`;
+  chatMessages.appendChild(msgEl);
+  chatMessages.scrollTop = chatMessages.scrollHeight;
 }
+
+// Save message to backend
+async function saveMessage(msg) {
+  await fetch("/api/addMessage", {
+    method: "POST",
+    headers: { "Content-Type": "application/json" },
+    body: JSON.stringify({ sessionId, message: msg })
+  });
+}
+
+// Event listeners
+sendButton.addEventListener("click", sendMessage);
+userInput.addEventListener("keydown", e => {
+  if (e.key === "Enter" && !e.shiftKey) {
+    e.preventDefault();
+    sendMessage();
+  }
+});
+userInput.addEventListener("input", function () {
+  this.style.height = "auto";
+  this.style.height = this.scrollHeight + "px";
+});
+newChatBtn.addEventListener("click", startNewChat);
+
+// Initialize
+(async function init() {
+  await loadSessions();
+  const last = historyList.lastChild;
+  if (last) {
+    loadSession(last.dataset.id); // last active chat
+  } else {
+    startNewChat();
+  }
+})();
