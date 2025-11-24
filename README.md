@@ -1,4 +1,4 @@
-# LLM Chat Application Template
+# Focus Buddy Chat Application
 
 An informative, friendly, and encouraging study guide chat application template powered by Cloudflare Workers AI. This app is designed to help students ask questions, save chats for every new topic, and receive encouragement while studying.
 
