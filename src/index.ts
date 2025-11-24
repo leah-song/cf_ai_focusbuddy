@@ -31,9 +31,12 @@ export default {
 		const url = new URL(request.url);
 		// inside fetch(...) near the top, create a stub for your DO once per request
 		// create DO stub (do this once per request, near the top of fetch)
-		const doId = env.MyAgent.idFromName("chat-v5"); // "chat" is a stable name; keep consistent
-		const doStub = env.MyAgent.get(doId);
+		// Get user ID from header (or default to 'anonymous') - 11/24
+		const userId = request.headers.get("x-user-id") || "anonymous";
 
+		// Each user gets their own Durable Object instance - 11/24
+		const doId = env.MyAgent.idFromName(`chat-${userId}`);
+		const doStub = env.MyAgent.get(doId);
 	
 		// Handle static assets (frontend)
 		if (url.pathname === "/" || !url.pathname.startsWith("/api/")) {

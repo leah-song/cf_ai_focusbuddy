@@ -1,3 +1,12 @@
+// Generate a stable ID per device/browser
+let userId = localStorage.getItem("focusBuddyUserId");
+if (!userId) {
+  userId = crypto.randomUUID();
+  localStorage.setItem("focusBuddyUserId", userId);
+}
+// common headers for fetch requests
+const userHeaders = { "x-user-id": userId };
+
 const chatMessages = document.getElementById("chat-messages");
 const userInput = document.getElementById("user-input");
 const sendButton = document.getElementById("send-button");
@@ -56,7 +65,7 @@ async function loadSession(id) {
 async function startNewChat() {
   const res = await fetch("/api/newSession", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json" , ...userHeaders},
     body: JSON.stringify({ topic: `Chat - ${new Date().toLocaleString()}` }),
   });
   const data = await res.json();
@@ -106,7 +115,7 @@ async function sendMessage() {
   try {
     const res = await fetch("/api/chat", {
       method: "POST",
-      headers: { "Content-Type": "application/json" },
+      headers: { "Content-Type": "application/json", ...userHeaders },
       body: JSON.stringify({ sessionId, messages: chatHistory })
     });
     const data = await res.json();
@@ -141,7 +150,7 @@ function addMessageToChat(role, content) {
 async function saveMessage(msg) {
   await fetch("/api/addMessage", {
     method: "POST",
-    headers: { "Content-Type": "application/json" },
+    headers: { "Content-Type": "application/json", ...userHeaders },
     body: JSON.stringify({ sessionId, message: msg })
   });
 }
